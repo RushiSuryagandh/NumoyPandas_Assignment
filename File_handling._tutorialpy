@@ -1,0 +1,64 @@
+# r -Read
+# a - Append
+# w - Write
+# x - Create
+
+# Read - read the data from file
+f=open('sample.txt','r')
+#print(f.read())     # read the all data
+print(f.readline())  # read the first line
+print(f.readline()) 
+
+for line in f:
+    print(line)
+f.close()  # must close the file when it is open
+
+try:
+    f=open('sample.txt')
+    print(f.read())
+except:
+    print('file does not exist')
+finally:
+    f.close()
+
+
+# Append - Create the file if it doesn't exist
+f=open('sample.txt','a')
+f.write('Harry')
+f.close()
+
+f=open('sample.txt')
+print(f.read())
+f.close()
+
+
+# Write (Overwrite)
+f=open('sample2.txt','w')
+f.write('ganesh\n harry \n')
+f.close()
+
+f=open('sample2.txt')
+print(f.read())
+f.close()
+
+
+# Two ways to create a new file
+f=open('sample2.txt','w')
+f.write('ganesh\n harry \n')
+f.close()
+
+# Creates a specified file , but returns an error if exist
+import os
+if not os.path.exists('hello.txt'):
+    f=open('hello.txt','x')
+    f.close()
+else:
+    print('File already exist')
+
+
+# delete a file
+if os.path.exists('hello.txt'):
+    os.remove('hello.txt')
+    print('File deleted successfully')
+else:
+    print('File does not exist')

@@ -18,6 +18,7 @@ def remove_user(users, username):
         raise ValueError("Username must be a string.")
     
     for i, user in enumerate(users):
+        #enumerate() function in Python adds a counter to an iterable and returns it as an enumerate object.
         if user['username'] == username:
             users.pop(i)
             return
