@@ -14,6 +14,7 @@ def log_execution_time(func):
 
 # Asynchronous function to fetch data from a single API
 async def fetch_single_api_data(api, session):
+    # print(session)  - the same session for every request
     try:
         async with session.get(api) as response:
             # print(await response.text())
@@ -26,6 +27,7 @@ async def fetch_single_api_data(api, session):
 # Asynchronous function to fetch data from all APIs concurrently
 async def fetch_data_from_all_API(apis):
     async with aiohttp.ClientSession() as session:
+        # print(session)
         tasks = [fetch_single_api_data(api, session) for api in apis]
         # print(tasks)
         results = await asyncio.gather(*tasks)
