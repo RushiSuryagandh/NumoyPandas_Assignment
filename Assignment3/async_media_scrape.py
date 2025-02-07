@@ -52,7 +52,7 @@ def save_to_markdown(title,body,filename):
     Args:
         title :Title name
         body : Text of news
-        filename: file name which saved in
+        filename: file name which saved data
     """
     
     try:
@@ -69,7 +69,7 @@ def scrape_media_channel_1():
         call fetch_data_from_article by passing the tags information
         fetch title and body and save it to markdown file
     """
-    url='https://indianexpress.com/article/cities/chandigarh/colombia-el-salvador-guatemala-mexico-deportee-woman-paid-rs-1-crore-agent-dunki-route-detention-us-9821023/?ref=breaking_hp'
+    url='https://indianexpress.com/article/india/working-on-law-for-safe-migration-mea-to-panel-9819904/?ref=breaking_hp'
     title_tag='h1'
     title_class='native_story_title'
     body_tag='div'
