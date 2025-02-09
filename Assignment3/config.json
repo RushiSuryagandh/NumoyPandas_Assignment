@@ -1,0 +1,17 @@
+{
+    "IndianExpress": {
+      "url": "https://indianexpress.com/article/cities/chandigarh/colombia-el-salvador-guatemala-mexico-deportee-woman-paid-rs-1-crore-agent-dunki-route-detention-us-9821023/?ref=breaking_hp",
+      "title_tag": "h1",
+      "title_class": "native_story_title",
+      "body_tag": "div",
+      "body_class": "story_details"
+    },
+    "TheHindu": {
+      "url": "https://www.thehindu.com/news/international/bangladesh-has-become-a-land-of-terrorists-and-fighters-says-sheikh-hasina-after-demolition-of-residence-of-sheikh-mujibur-rahman/article69187048.ece",
+      "title_tag": "h1",
+      "title_class": "title",
+      "body_tag": "div",
+      "body_class": "col-xl-9 col-lg-8 col-md-12 col-sm-12 col-12 storyline"
+    }
+  }
+  

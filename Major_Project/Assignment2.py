@@ -1,34 +1,21 @@
-import selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.options import Options
 import json
 import time
 import fitz
 import os
 import re
-import csv
-import asyncio
-import aiohttp
-from concurrent.futures import ThreadPoolExecutor
+import pandas as pd
+
 
 def load_json():
-    with open('./config2.json','r')as file:
-        data=json.load(file)
-    return data
+    with open('./config2.json','r') as file:
+        data= json.load(file)
+        return data
 
-async def download_pdf(url,options,session):
-    driver=webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()),options=options)
-    async with session.get(url)as response:
-        if response.status==200:
-            driver.get(url)
-            driver.implicitly_wait(2)
-        driver.quit()
-
-
-async def downlod_pdfs(urls_data):
+def downlod_pdf(urls_data):
     options=webdriver.ChromeOptions()
     options.add_argument('--headless')
     options.add_experimental_option('prefs',{
@@ -37,13 +24,12 @@ async def downlod_pdfs(urls_data):
         'plugins.always_open_pdf_externally':True # means that PDF files will always be opened in an external PDF viewer instead of within the software or browser itself.
 
     })
+    driver=webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()),options=options)
     
-
-    async with aiohttp.ClientSession() as session:
-        tasks=[download_pdf(url,options,session) for url in urls_data]
-        await asyncio.gather(*tasks)
-    
-
+    # This part uses a library called webdriver-manager to automatically download and manage the correct version of ChromeDriver (the Chrome browser’s WebDriver). don't have to manually download or specify the driver’s location.
+    for url in urls_data: # for each url in urls_data
+        # print(url)
+        driver.get(url)
 
 def fetch_pdf_files(directory_path):
     pdf_files = []
@@ -55,17 +41,26 @@ def fetch_pdf_files(directory_path):
             if file.endswith('.pdf'):
                 # Append the full file path to the list
                 pdf_files.append(os.path.join(root, file))
-    
+                
+    print(f"Found PDF: {pdf_files}") 
     return pdf_files
 
 
 
 
-def extract_data_from_pdf(pdf_file_path):
-    open_pdf=fitz.open(pdf_file_path)
-    text=""
-    for page_num in range(3):
-        text+=open_pdf[page_num].get_text('text')
+def extract_data_from_pdf(pdf_file_paths):
+    text=''
+    # print(pdf_file_paths)
+    for pdf in pdf_file_paths:
+        # print(pdf)
+        open_pdf=fitz.open(pdf)
+        time.sleep(2)
+
+        # print(open_pdf)
+        for page_num in range(4):
+            text+=open_pdf[page_num].get_text('text')
+        # time.sleep(2)
+        # print(text)
     return text
 
 def extract_data_from_regx(text):
@@ -74,7 +69,7 @@ def extract_data_from_regx(text):
     mobile_number_pattern=r'\b(?:\d{3,5}[\s-]?)?[\d]{7,10}\b'
     pan_number_pattern=r'\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b'
     dates_pattern=r'\b\d{2}/\d{2}/\d{4}\b'
-    website_pattern=r'https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    website_pattern=r'\bhttps?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/\S*)?\b|\bwww\.[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/\S*)?'
     
     emails = re.findall(email_pattern, text)
     cin_numbers = re.findall(cin_number_pattern, text)
@@ -95,45 +90,47 @@ def extract_data_from_regx(text):
             'Website': websites[i] if i < len(websites) else ''
         }
         data.append(data_row)
+    time.sleep(2)
     return data
 
-def save_to_csv(data,file_name='pdf_results.csv') :
-    with open(file_name,mode='w',newline='',encoding='utf-8')as file:
-        writer = csv.DictWriter(file, fieldnames=['Email', 'CIN', 'Mobile Number', 'PAN', 'Date', 'Website'])
-        writer.writeheader()
-        for row in data:
-            writer.writerow(row)
-    print(f'Data Succesfully saved in {file_name}')
+
+
+def save_to_csv(data, file_name='pdf_results.csv'):
+    df = pd.DataFrame(data, columns=["Email", "CIN",  "Mobile_Number", "PAN", "Date", "Website"])
+    df.to_csv(file_name, index=False, encoding='utf-8')
+    print(f'Data successfully saved in {file_name}')
 
     
-async def process_pdf(pdf_file_path):
-    text=extract_data_from_pdf(pdf_file_path)
-    return extract_data_from_regx(text)
+
     
 
-async def main():
-    config=load_json()
-    urls_data=config['urls']
-    await downlod_pdfs(urls_data)
-   
-    # Specify your directory path
+def main():
+    config =load_json()
+    urls_data = config['urls']
+    downlod_pdf(urls_data)
+    time.sleep(1)
     directory_path = config['directory_path']
-
-    # Fetch the PDF file paths
+    #  Fetch the PDF file paths
     pdf_file_paths = fetch_pdf_files(directory_path)
-    with ThreadPoolExecutor() as executor:
-        tasks=[process_pdf(pdf_file_path) for pdf_file_path in pdf_file_paths]
-        results=await asyncio.gather(*tasks)
-    data=[item for sublist in results for item in sublist]
-    
+
+    # Extract data from PDFs
+    text = extract_data_from_pdf(pdf_file_paths)
+    # Extract data using regex
+    data = extract_data_from_regx(text)
+    # Save to CSV
     save_to_csv(data)
+
     
     
 if __name__=="__main__":
     start_time=time.time()
-    asyncio.run(main())
+    main()
     end_time=time.time()
     print(end_time-start_time)
+    
+    
+    
+
     
     
     
