@@ -8,6 +8,7 @@ import fitz
 import os
 import re
 import pandas as pd
+from decorator import execution_time
 
 
 def load_json():
@@ -15,7 +16,7 @@ def load_json():
         data= json.load(file)
         return data
 
-def downlod_pdf(urls_data):
+def downlod_pdf(urls_data,download_dir):
     options=webdriver.ChromeOptions()
     options.add_argument('--headless')
     options.add_experimental_option('prefs',{
@@ -25,11 +26,24 @@ def downlod_pdf(urls_data):
 
     })
     driver=webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()),options=options)
-    
     # This part uses a library called webdriver-manager to automatically download and manage the correct version of ChromeDriver (the Chrome browser’s WebDriver). don't have to manually download or specify the driver’s location.
+    
     for url in urls_data: # for each url in urls_data
-        # print(url)
-        driver.get(url)
+        # Extract the filename from the URL (or create a unique filename based on URL)
+        file_name = url.split('/')[-1]
+        file_path = os.path.join(download_dir, file_name)
+
+        # Check if the file already exists
+        if not os.path.exists(file_path):
+            # If the file doesn't exist, download it
+            driver.get(url)
+            print(f"Downloading {file_name}...")
+        else:
+            # If the file exists, skip downloading
+            print(f"{file_name} already exists. Skipping download.")
+    
+    driver.quit()
+
 
 def fetch_pdf_files(directory_path):
     pdf_files = []
@@ -42,7 +56,7 @@ def fetch_pdf_files(directory_path):
                 # Append the full file path to the list
                 pdf_files.append(os.path.join(root, file))
                 
-    print(f"Found PDF: {pdf_files}") 
+    # print(f"Found PDF: {pdf_files}") 
     return pdf_files
 
 
@@ -103,11 +117,12 @@ def save_to_csv(data, file_name='pdf_results.csv'):
     
 
     
-
+@execution_time
 def main():
     config =load_json()
     urls_data = config['urls']
-    downlod_pdf(urls_data)
+    download_dir=config['directory_path']
+    downlod_pdf(urls_data,download_dir)
     time.sleep(1)
     directory_path = config['directory_path']
     #  Fetch the PDF file paths
@@ -123,10 +138,7 @@ def main():
     
     
 if __name__=="__main__":
-    start_time=time.time()
     main()
-    end_time=time.time()
-    print(end_time-start_time)
     
     
     

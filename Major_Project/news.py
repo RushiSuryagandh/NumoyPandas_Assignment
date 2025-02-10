@@ -5,6 +5,16 @@ import asyncio
 from bs4 import BeautifulSoup
 import time
 
+# Decorator function to calculate execution time
+def execution_time(func):
+    async def wrapper(*args,**kwargs):
+        start_time=time.time()
+        result=await func(*args,**kwargs)
+        end_time=time.time()
+        print(f'Execution time :{end_time-start_time}')
+        return result
+    return wrapper
+
 # Load config files
 def load_json():
     with open('./config.json', 'r') as file:
@@ -38,6 +48,39 @@ async def fetch_search_result(url):
             else:
                 return None
             
+# It generates a list of URLs to fetch and then uses asyncio.gather() to run all fetch tasks concurrently.
+async def fetch_all_results(search_queries, search_engines, num_pages):
+    results = []
+
+    tasks = []  # List to store the asynchronous tasks
+
+    # Generate all URLs to fetch
+    for search_content in search_queries:
+        for search_engine in search_engines:
+            for page in range(num_pages):
+                url = construct_url_for_search(search_content, search_engine, page)
+
+                tasks.append(fetch_search_result(url))  # Append each fetch task(Couroutine Object)
+   
+
+    # Execute all requests concurrently
+    html_responses = await asyncio.gather(*tasks)  # Gather all responses concurrently
+    
+
+    # Extract articles for each response
+    result_index = 0  # Index to map HTML responses back to queries
+
+    for search_content in search_queries:
+        for search_engine in search_engines:
+            for page in range(num_pages):
+                html = html_responses[result_index]
+                result_index += 1  # Move to the next HTML response
+                soup = BeautifulSoup(html, 'html.parser') if html else None
+                articles = extract_articles(soup, search_engine)
+                for link_of_news, title, data_time_value, media_name in articles:
+                    results.append([search_content, search_engine, link_of_news, title, data_time_value, media_name])
+
+    return results
 
 
 # Extract articles from the soup object when each search engine having different HTML structure
@@ -92,49 +135,18 @@ def save_to_csv(data, file_name='news_results_2.csv'):
 
 
 
-# It generates a list of URLs to fetch and then uses asyncio.gather() to run all fetch tasks concurrently.
-async def fetch_all_results(search_queries, search_engines, num_pages):
-    results = []
 
-    tasks = []  # List to store the asynchronous tasks
 
-    # Generate all URLs to fetch
-    for search_content in search_queries:
-        for search_engine in search_engines:
-            for page in range(num_pages):
-                url = construct_url_for_search(search_content, search_engine, page)
-
-                tasks.append(fetch_search_result(url))  # Append each fetch task(Couroutine Object)
-   
-
-    # Execute all requests concurrently
-    html_responses = await asyncio.gather(*tasks)  # Gather all responses concurrently
-    
-
-    # Extract articles for each response
-    result_index = 0  # Index to map HTML responses back to queries
-
-    for search_content in search_queries:
-        for search_engine in search_engines:
-            for page in range(num_pages):
-                html = html_responses[result_index]
-                result_index += 1  # Move to the next HTML response
-                soup = BeautifulSoup(html, 'html.parser') if html else None
-                articles = extract_articles(soup, search_engine)
-                for link_of_news, title, data_time_value, media_name in articles:
-                    results.append([search_content, search_engine, link_of_news, title, data_time_value, media_name])
-
-    return results
 
 
 # Main async function to run everything
+@execution_time
 async def main():
     config = load_json()
     search_queries = generate_search_queries(config['company_names'], config['keywords'])
     search_engines = config['Search_engine']
     num_pages = config['Number_of_Pages']
 
-    start_time = time.time()
 
     # Gather results concurrently for all search queries and pages
     results = await fetch_all_results(search_queries, search_engines, num_pages)
@@ -142,9 +154,8 @@ async def main():
     # Save the results to CSV
     save_to_csv(results)
 
-    end_time = time.time()
-    print(f"Execution Time: {end_time - start_time} seconds")
 
 # Run the async main function
 if __name__ == "__main__":
     asyncio.run(main())
+
