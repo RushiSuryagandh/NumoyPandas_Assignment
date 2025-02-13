@@ -1,0 +1,6 @@
+pandas
+json
+aiohttp
+asyncio
+BeautifulSoup
+time
